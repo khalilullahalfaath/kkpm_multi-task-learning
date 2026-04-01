@@ -21,13 +21,104 @@
 \begin{document}
 
 \begin{center}
-    \large \textbf{Judul Laporan} \\[0.2cm]
-    \large Nama Mata Kuliah  \\[0.5cm]
+    \large \textbf{Tugas Multi-task Learning} \\[0.2cm]
+    \large Kecerdasan Komputasional dan Pemelajaran Mesin (KKPM)  \\[0.5cm]
 \end{center}
 
 
 \section{Pranala Kode}
-Hasil \textit{running} implementasi kode dapat diakses di pranala repositori GitHub berikut \url{https://github.com/khalilullahalfaath/comparing-ranked-retrieval-models/blob/main/1_STBI.ipynb}.
+Hasil \textit{running} implementasi kode dapat diakses di pranala repositori GitHub berikut \url{https://drive.google.com/file/d/1B3Dz7qAXKHFaK73yKCNPu7YXspZP2T7V/view?usp=sharing}.
 
+\section{Hasil Pengujian Awal (Baseline)}
+
+Berikut adalah hasil pengujian performa model pada data uji (\textit{test set}) sebelum dilakukan proses optimasi. Evaluasi dilakukan menggunakan metrik \textit{Intersection over Union} (IoU) untuk segmentasi dan \textit{Mean Absolute Error} (MAE) untuk estimasi kedalaman (\textit{depth estimation}).
+
+\begin{table}[h]
+    \centering
+    \caption{Hasil Evaluasi Batch Test Sebelum Tuning}
+    \label{tab:test_results_baseline}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Batch} & \textbf{Total Metric (TM)} & \textbf{IoU (Seg)} & \textbf{MAE (Depth)} & \textbf{Time (s)} \\ \hline
+        0              & 1,9884                     & 0,0116             & 0,9999               & 0,1151            \\ \hline
+        1              & 1,9866                     & 0,0118             & 0,9984               & 0,0328            \\ \hline
+        2              & 1,9887                     & 0,0108             & 0,9995               & 0,0158            \\ \hline
+        3              & 1,9908                     & 0,0088             & 0,9996               & 0,0122            \\ \hline
+        4              & 1,9603                     & 0,0091             & 0,9693               & 0,0076            \\ \hline
+        \textbf{Avg}   & \textbf{1,9829}            & \textbf{0,0104}    & \textbf{0,9934}      & \textbf{0,0367}   \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Analisis Hasil}
+Berdasarkan data pada Tabel \ref{tab:test_results_baseline}, dapat ditarik beberapa kesimpulan awal mengenai performa model:
+\begin{itemize}
+    \item \textbf{Akurasi Segmentasi:} Nilai rata-rata IoU sebesar 0,0104 (1,04\%) menunjukkan bahwa model belum mampu mengenali objek dengan baik. Terdapat ketidakcocokan yang signifikan antara hasil prediksi (\textit{prediction mask}) dengan data sebenarnya (\textit{ground truth}).
+    \item \textbf{Estimasi Kedalaman:} Nilai MAE rata-rata sebesar 0,9934 menunjukkan tingkat kesalahan yang cukup tinggi dalam memprediksi jarak (depth). Hal ini mengindikasikan bahwa model masih kesulitan dalam melakukan regresi nilai piksel \textit{disparity} ke \textit{depth} secara akurat.
+    \item \textbf{Efisiensi Waktu:} Rata-rata waktu inferensi per gambar adalah 0,0367 detik. Meskipun performa akurasi masih rendah, kecepatan pemrosesan sudah cukup baik untuk kebutuhan \textit{real-time}, tetapi optimasi lebih lanjut harus difokuskan pada peningkatan kualitas prediksi tanpa mengorbankan kecepatan secara drastis.
+\end{itemize}
+
+\section{\textit{Tuning hyperparameter}}
+Optimasi dilakukan dengan mengubah parameter-parameter berikut. Sebagaimana disebutkan dalam Tabel~\ref{tab:list_parameter}.
+
+\begin{table}
+    \centering
+    \caption{Daftar parameter yang di-\textit{tuning}.}
+    \label{tab:list_parameter}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Parameter}     & \textbf{Nilai sebelum di-\textit{tuning}} & \textbf{Nilai sesudah di-\textit{tuning}} \\ \hline
+        \textit{Epoch}         & 2                                         & 10                                        \\ \hline
+        \textit{Learning rate} & 0.0025                                    & 0.00025                                   \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{Hasil Pengujian Setelah Tuning Parameter}
+
+Setelah melakukan analisis pada pengujian awal, dilakukan proses \textit{fine-tuning} dengan mengubah dua parameter utama: memperpanjang durasi pelatihan dari 2 menjadi 10 \textit{epoch}, serta memperkecil \textit{learning rate} dari $0,0025$ menjadi $0,00025$. Hasil perbaikan performa disajikan pada Tabel \ref{tab:test_results_tuned}.
+
+\begin{table}[h]
+    \centering
+    \caption{Hasil Evaluasi Batch Test Setelah Tuning (Epoch 10, LR 0,00025)}
+    \label{tab:test_results_tuned}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Batch} & \textbf{Total Metric (TM)} & \textbf{IoU (Seg)} & \textbf{MAE (Depth)} & \textbf{Time (s)} \\ \hline
+        0              & 1,1440                     & 0,0234             & 0,1674               & 0,0831            \\ \hline
+        1              & 1,1598                     & 0,0224             & 0,1823               & 0,0220            \\ \hline
+        2              & 1,1604                     & 0,0263             & 0,1867               & 0,0207            \\ \hline
+        3              & 1,1720                     & 0,0254             & 0,1974               & 0,0124            \\ \hline
+        4              & 1,1456                     & 0,0233             & 0,1689               & 0,0079            \\ \hline
+        \textbf{Avg}   & \textbf{1,1564}            & \textbf{0,0242}    & \textbf{0,1805}      & \textbf{0,0292}   \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Analisis Perbandingan}
+Eksperimen ini menunjukkan peningkatan signifikan dibandingkan dengan model baseline:
+\begin{itemize}
+    \item \textbf{Penurunan Error Kedalaman:} Metrik MAE mengalami penurunan drastis dari \textbf{0,9934 menjadi 0,1805} (peningkatan akurasi sekitar 81\%). Hal ini membuktikan bahwa \textit{learning rate} yang lebih rendah membantu model konvergen lebih baik pada tugas regresi kedalaman.
+    \item \textbf{Peningkatan Segmentasi:} Walaupun nilai IoU masih tergolong rendah, terdapat kenaikan dari \textbf{0,0104 menjadi 0,0242} (naik lebih dari 100\%). Hal ini mengindikasikan model mulai mampu membentuk struktur objek meskipun belum sempurna.
+    \item \textbf{Stabilitas Metrik:} Nilai \textit{Total Metric} (TM) menurun dari \textbf{1,9829 ke 1,1564}, yang menunjukkan bahwa kombinasi kedua tugas (\textit{multi-task learning}) berjalan ke arah yang benar.
+\end{itemize}
+
+\section{Catatan Eksperimen dan Kendala Teknis}
+
+Selama proses optimasi model, penulis telah mengimplementasikan beberapa skenario eksperimen guna meningkatkan performa \textit{Multi-Task Learning}. Skenario tersebut meliputi:
+\begin{itemize}
+    \item Peningkatan kapasitas \textit{backbone} dari ResNet34 menjadi ResNet50 untuk ekstraksi fitur yang lebih mendalam.
+    \item Modifikasi fungsi kerugian (\textit{loss function}) dengan memperkenalkan parameter penyeimbang $\alpha$ dan $\beta$ guna mengatasi dominasi salah satu tugas (\textit{task dominance}).
+    \item Penyesuaian \textit{hyperparameter} berupa peningkatan jumlah \textit{epoch} dan reduksi \textit{learning rate} secara bertahap.
+\end{itemize}
+
+Namun, implementasi skenario tersebut terkendala oleh munculnya kesalahan sistem berupa \textit{Segmentation Fault} pada lingkungan komputasi yang digunakan. Penulis telah melakukan upaya mitigasi dengan melakukan manajemen \textit{shared memory} melalui penyesuaian parameter \textit{num\_workers} pada \textit{DataLoader}. Meskipun demikian, hingga batas waktu yang ditentukan, kendala stabilitas memori tersebut belum sepenuhnya teratasi sehingga hasil yang disajikan merupakan konfigurasi paling stabil yang dapat dieksekusi oleh perangkat keras.
+
+\section{Kesimpulan}
+
+Berdasarkan serangkaian eksperimen dan analisis yang telah dilakukan pada model \textit{Multi-Task Learning} untuk segmentasi dan estimasi kedalaman, dapat ditarik beberapa kesimpulan utama:
+\begin{enumerate}
+    \item \textbf{Efektivitas Tuning Hyperparameter:} Penurunan \textit{learning rate} menjadi $0,00025$ dan peningkatan durasi pelatihan menjadi 10 \textit{epoch} terbukti secara signifikan meningkatkan performa model. Hal ini ditunjukkan dengan penurunan \textit{Mean Absolute Error} (MAE) sebesar 81\% (dari 0,9934 ke 0,1805) dan peningkatan IoU sebesar lebih dari 100\% dibandingkan dengan model \textit{baseline}.
+    \item \textbf{Keseimbangan Multi-Task:} Model menunjukkan konvergensi yang lebih baik pada tugas regresi kedalaman dibandingkan segmentasi objek. Meskipun nilai IoU meningkat menjadi 0,0242, angka tersebut masih tergolong rendah, yang mengindikasikan bahwa model memerlukan waktu pelatihan yang lebih lama atau penyeimbangan bobot \textit{loss} yang lebih spesifik untuk tugas segmentasi.
+    \item \textbf{Kendala Infrastruktur Komputasi:} Upaya peningkatan arsitektur (ResNet50) dan kompleksitas model dibatasi oleh kendala teknis berupa \textit{Segmentation Fault}. Manajemen memori dan stabilitas lingkungan komputasi menjadi faktor krusial yang menentukan batas optimal dari eksperimen yang dapat dilakukan.
+    \item \textbf{Efisiensi Inferensi:} Model hasil \textit{tuning} tetap mempertahankan efisiensi waktu pemrosesan dengan rata-rata 0,0292 detik per citra, sehingga secara teknis masih memenuhi kriteria untuk diimplementasikan pada sistem \textit{real-time}.
+\end{enumerate}
 
 \end{document}
